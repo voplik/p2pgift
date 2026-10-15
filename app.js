@@ -6,6 +6,14 @@ if (tg) {
   tg.setBackgroundColor?.('#050508');
   tg.setBottomBarColor?.('#050508');
 }
+// compact sheet layout when Telegram shows only part of the screen (half-height mode)
+const fitViewport = () => {
+  const h = tg?.viewportStableHeight || window.innerHeight;
+  document.documentElement.classList.toggle('short', h < 520);
+};
+fitViewport();
+tg?.onEvent?.('viewportChanged', fitViewport);
+window.addEventListener('resize', fitViewport);
 const haptic = (type = 'light') => tg?.HapticFeedback?.impactOccurred(type);
 const tick = () => tg?.HapticFeedback?.selectionChanged();
 const notify = (type) => tg?.HapticFeedback?.notificationOccurred(type);
@@ -181,7 +189,7 @@ function setGram(side, from, to, sign = '') {
 /* Moves a copy of `fromEl` onto `toEl` with a spring, like a matched-geometry transition */
 async function fly(fromEl, toEl, g, { lift = 0, rotate = 0, s = S.soft } = {}) {
   const a = fromEl.getBoundingClientRect();
-  const b = toEl.getBoundingClientRect();
+  const b = settledRect(toEl);
   const clone = giftEl(g);
   clone.classList.add('fly');
   Object.assign(clone.style, { left: b.left + 'px', top: b.top + 'px', width: b.width + 'px', height: b.height + 'px' });
@@ -211,25 +219,62 @@ function ripple(el, { color = 'rgba(255,255,255,.55)', count = 2, scale = 1.9 } 
   }
 }
 
-function particles(el, n = 18) {
+/* evenly spaced dots flying out in a ring — the burst around the lock in the video */
+function particles(el, { rings = [[16, 2.7, 0], [10, 1.9, 120]], color = '#d4caff' } = {}) {
   const c = center(el);
+  const r0 = c.w * 0.55;
+  rings.forEach(([n, reach, delay]) => {
+    const spin = Math.random() * Math.PI;
+    for (let i = 0; i < n; i++) {
+      const d = document.createElement('div');
+      d.className = 'dot';
+      Object.assign(d.style, { left: c.x + 'px', top: c.y + 'px', background: color });
+      document.body.append(d);
+      const ang = spin + (i / n) * Math.PI * 2;
+      const r1 = c.w * reach;
+      d.animate([
+        { transform: `translate(${Math.cos(ang) * r0}px, ${Math.sin(ang) * r0}px) scale(1.4)`, opacity: 0 },
+        { transform: `translate(${Math.cos(ang) * (r0 + r1) / 2}px, ${Math.sin(ang) * (r0 + r1) / 2}px) scale(1.1)`, opacity: 1, offset: 0.3 },
+        { transform: `translate(${Math.cos(ang + 0.25) * r1}px, ${Math.sin(ang + 0.25) * r1}px) scale(.3)`, opacity: 0 },
+      ], { duration: 1000, delay, easing: 'cubic-bezier(.15,.7,.3,1)', fill: 'both' }).finished.then(() => d.remove());
+    }
+  });
+}
+
+/* a small confetti pop for the finished trade */
+function confetti(el, n = 26) {
+  const c = center(el);
+  const colors = ['#30d158', '#0a84ff', '#bf5af2', '#ffd60a', '#ff9f0a', '#64d2ff', '#ff375f'];
   for (let i = 0; i < n; i++) {
-    const d = document.createElement('div');
-    d.className = 'dot';
-    Object.assign(d.style, { left: c.x + 'px', top: c.y + 'px' });
-    document.body.append(d);
-    const a0 = (i / n) * Math.PI * 2;
-    const a1 = a0 + 0.9;
-    const r0 = c.w * 0.55;
-    const r1 = c.w * (1.2 + Math.random() * 0.5);
-    const am = (a0 + a1) / 2;
-    const rm = (r0 + r1) / 2;
-    d.animate([
-      { transform: `translate(${Math.cos(a0) * r0}px, ${Math.sin(a0) * r0}px) scale(.5)`, opacity: 0 },
-      { transform: `translate(${Math.cos(am) * rm}px, ${Math.sin(am) * rm}px) scale(1.2)`, opacity: 1, offset: 0.4 },
-      { transform: `translate(${Math.cos(a1) * r1}px, ${Math.sin(a1) * r1}px) scale(.4)`, opacity: 0 },
-    ], { duration: 900 + Math.random() * 300, easing: 'cubic-bezier(.2,.7,.3,1)', fill: 'both' }).finished.then(() => d.remove());
+    const p = document.createElement('div');
+    p.className = 'spark';
+    const round = i % 3 === 0;
+    Object.assign(p.style, { left: c.x + 'px', top: c.y + 'px', background: colors[i % colors.length],
+      width: round ? '6px' : '5px', height: round ? '6px' : '10px', borderRadius: round ? '50%' : '2px' });
+    document.body.append(p);
+    const ang = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 1.4; // mostly upwards
+    const v = 70 + Math.random() * 90;
+    const x = Math.cos(ang) * v;
+    const y = Math.sin(ang) * v;
+    p.animate([
+      { transform: 'translate(0,0) rotate(0) scale(.3)', opacity: 1 },
+      { transform: `translate(${x}px, ${y}px) rotate(${Math.random() * 360}deg) scale(1)`, opacity: 1, offset: 0.4 },
+      { transform: `translate(${x * 1.25}px, ${y + 140}px) rotate(${360 + Math.random() * 540}deg) scale(.8)`, opacity: 0 },
+    ], { duration: 1300 + Math.random() * 500, easing: 'cubic-bezier(.2,.6,.4,1)', fill: 'both' }).finished.then(() => p.remove());
   }
+}
+
+/* a sticker-like twitch: quick shake that settles */
+function twitch(el, strength = 1) {
+  if (!el) return;
+  const k = strength;
+  anim(el, [
+    { transform: 'none' },
+    { transform: `rotate(${-7 * k}deg) scale(${1 + 0.06 * k})`, offset: 0.15 },
+    { transform: `rotate(${6 * k}deg) scale(${1 + 0.04 * k})`, offset: 0.35 },
+    { transform: `rotate(${-3 * k}deg)`, offset: 0.6 },
+    { transform: 'none' },
+  ], { duration: 650, easing: 'ease-out' });
 }
 
 /* ---------- inserting your gift ---------- */
@@ -255,6 +300,7 @@ async function placeMine(id, fromEl) {
   // lands tilted, then straightens itself; the slot gives a little under the weight
   anim(el, [{ transform: 'rotate(8deg) scale(1.08)' }, { transform: 'rotate(-3deg) scale(.98)', offset: 0.45 }, { transform: 'none' }], S.wobbly);
   anim(mySlot, [{ transform: 'scale(.92)' }, { transform: 'none' }], S.wobbly);
+  ripple(mySlot, { count: 1, scale: 1.45, color: 'rgba(255,255,255,.4)' });
   // the counterpart's gift twitches as if it noticed
   anim($('.slot .gift', left), [{ transform: 'none' }, { transform: 'rotate(-4deg) scale(1.03)', offset: 0.3 }, { transform: 'none' }], S.wobbly, { delay: 120 });
   haptic('medium');
@@ -313,17 +359,32 @@ let openSheetEl = null;
 const curTransform = (el) => getComputedStyle(el).transform;
 const curOpacity = (el) => getComputedStyle(el).opacity;
 
-function setBehind(on, s = S.soft) {
-  // the page behind recedes like an iOS card stack
+let behindToken = 0;
+function setBehind(on) {
+  // the page behind recedes like an iOS card stack, and comes back along the same spring
+  const token = ++behindToken;
   const from = { transform: curTransform(app), filter: getComputedStyle(app).filter };
   clearAnims(app);
-  const to = on ? { transform: 'scale(.94)', filter: 'brightness(.8)' } : { transform: 'none', filter: 'none' };
-  const p = on ? anim(app, [from, to], s) : tween(app, [from, to], 320);
-  if (!on) p.then(() => clearAnims(app));
+  const to = on ? { transform: 'scale(.94)', filter: 'brightness(.8)' } : { transform: 'none', filter: 'brightness(1)' };
+  anim(app, [from, to], S.soft).then(() => {
+    // only tidy up if nothing newer took over meanwhile
+    if (!on && token === behindToken) clearAnims(app);
+  });
   const bo = curOpacity(backdrop);
   clearAnims(backdrop);
-  tween(backdrop, [{ opacity: bo }, { opacity: on ? 1 : 0 }], on ? 320 : 280);
+  tween(backdrop, [{ opacity: bo }, { opacity: on ? 1 : 0 }], on ? 320 : 420);
   backdrop.classList.toggle('on', on);
+}
+
+/* where an element will be once the page behind has settled (used to aim flying gifts while it springs back) */
+function settledRect(el) {
+  const as = app.getAnimations();
+  if (!as.length) return el.getBoundingClientRect();
+  const saved = as.map((a) => a.currentTime);
+  as.forEach((a) => { a.currentTime = a.effect.getComputedTiming().endTime - 1; });
+  const r = el.getBoundingClientRect();
+  as.forEach((a, i) => { a.currentTime = saved[i]; });
+  return r;
 }
 
 function openSheet(sh) {
@@ -351,7 +412,7 @@ async function closeSheet() {
   clearAnims(sh);
   sh.style.transform = '';
   setBehind(false);
-  await tween(sh, [{ transform: from }, { transform: 'translateY(110%)' }], 300);
+  await tween(sh, [{ transform: from }, { transform: 'translateY(110%)' }], 420);
   if (openSheetEl !== sh) {
     sh.classList.remove('open');
     clearAnims(sh);
@@ -525,6 +586,7 @@ async function confirmBoth() {
   trade.classList.add('armed');
   anim(lock, [{ transform: 'scale(1)' }, { transform: 'scale(1.35) rotate(-8deg)', offset: 0.3 }, { transform: 'scale(.92)', offset: 0.6 }, { transform: 'none' }], S.wobbly);
   particles(lock);
+  ripple(lock, { color: 'rgba(124,92,255,.8)', count: 1, scale: 2.2 });
   haptic('rigid');
   await sleep(850);
   if (!alive(run)) return;
@@ -540,7 +602,9 @@ async function swap(run) {
   const b = $('.slot .gift', right);
   const ra = a.getBoundingClientRect();
   const rb = b.getBoundingClientRect();
-  const pill = $('.gram.on', left);
+  // both GRAM pills trade sides together with the gifts
+  const pill = $('.gram', left);
+  const pill2 = $('.gram', right);
   const make = (el, r, z) => {
     const c = el.cloneNode(true);
     c.classList.add('fly');
@@ -550,9 +614,10 @@ async function swap(run) {
   };
   const ca = make(a, ra, 101);
   const cb = make(b, rb, 102);
-  const cp = pill && make(pill, pill.getBoundingClientRect(), 103);
+  const cp = make(pill, pill.getBoundingClientRect(), 103);
+  const cq = make(pill2, pill2.getBoundingClientRect(), 104);
   a.style.opacity = b.style.opacity = 0;
-  if (pill) pill.style.opacity = 0;
+  pill.style.opacity = pill2.style.opacity = 0;
 
   // names fade away while gifts are in the air
   const texts = $$('.gname, .gsub', trade);
@@ -579,24 +644,31 @@ async function swap(run) {
       { transform: `translate(${-dx * 0.5}px, -42px) scale(1.22) rotate(-10deg)`, filter: 'blur(2.5px)', offset: 0.5 },
       { transform: `translate(${-dx}px, 0) scale(1.06) rotate(-4deg)`, filter: 'blur(0)' },
     ], opts).finished,
-    cp && cp.animate([
+    cp.animate([
       { transform: 'none', filter: 'blur(0)' },
-      { transform: `translate(${dx * 0.5}px, 10px) scale(1.05)`, filter: 'blur(3px)', offset: 0.5 },
+      { transform: `translate(${dx * 0.5}px, 12px) scale(.95)`, filter: 'blur(3px)', offset: 0.5 },
       { transform: `translate(${dx}px, 0)`, filter: 'blur(0)' },
+    ], { ...opts, delay: 60 }).finished,
+    cq.animate([
+      { transform: 'none', filter: 'blur(0)' },
+      { transform: `translate(${-dx * 0.5}px, -12px) scale(1.08)`, filter: 'blur(3px)', offset: 0.5 },
+      { transform: `translate(${-dx}px, 0)`, filter: 'blur(0)' },
     ], { ...opts, delay: 60 }).finished,
   ]);
   if (!alive(run)) return;
 
   // land: real gifts swap places and settle with a wobble
-  ca.remove(); cb.remove(); cp?.remove();
-  if (pill) pill.style.opacity = '';
+  ca.remove(); cb.remove(); cp.remove(); cq.remove();
+  pill.style.opacity = pill2.style.opacity = '';
   const ga = putInSlot(left, state.mine);
   const gb = putInSlot(right, THEIR_GIFT);
   anim(ga, [{ transform: 'scale(1.06) rotate(-4deg)' }, { transform: 'none' }], S.wobbly);
   anim(gb, [{ transform: 'scale(1.04) rotate(4deg)' }, { transform: 'none' }], S.wobbly);
+  setTimeout(() => { twitch(gb, 1); twitch(ga, 0.6); }, 260);
   texts.forEach(clearAnims);
-  setGram(left, 0, GRAM_OPTIONS[state.gramIndex], '+');
-  setGram(right, 0, THEIR_GRAM, '+');
+  // pills arrived already showing their amounts, so no count-up from zero
+  setGram(left, GRAM_OPTIONS[state.gramIndex], GRAM_OPTIONS[state.gramIndex], '+');
+  setGram(right, THEIR_GRAM, THEIR_GRAM, '+');
   haptic('heavy');
 }
 
@@ -608,6 +680,8 @@ async function success(run) {
   lock.classList.add('done');
   anim(lock, [{ transform: 'scale(1)' }, { transform: 'scale(1.3)', offset: 0.35 }, { transform: 'none' }], S.wobbly);
   ripple(lock, { color: 'rgba(48,209,88,.7)', count: 2, scale: 2.6 });
+  particles(lock, { rings: [[14, 2.4, 0]], color: '#7dffa0' });
+  confetti(lock);
   trade.classList.remove('armed');
   setHead(`${ICON.done}<span>Обмен завершён</span>`);
   setTimeout(() => {
@@ -705,7 +779,12 @@ function attachDrag(el, id) {
     let wasOver = false;
     const g = MY_GIFTS.find((x) => x.id === id);
 
+    // the whole page above the sheet is a drop zone; near the slot the gift is pulled in by a magnet
     const overSlot = (x, y) => {
+      if (openSheetEl !== giftSheet) return true;
+      return y < giftSheet.getBoundingClientRect().top - 4;
+    };
+    const nearSlot = (x, y) => {
       const r = mySlot.getBoundingClientRect();
       return x > r.left - 24 && x < r.right + 24 && y > r.top - 24 && y < r.bottom + 24;
     };
@@ -726,7 +805,7 @@ function attachDrag(el, id) {
       const over = overSlot(ev.clientX, ev.clientY);
       let tx = ev.clientX - sx;
       let ty = ev.clientY - sy;
-      if (over) {
+      if (nearSlot(ev.clientX, ev.clientY)) {
         // magnet: pull the ghost toward the slot centre
         const c = center(mySlot);
         tx += (c.x - (r0.left + r0.width / 2 + tx)) * 0.45;
@@ -749,9 +828,9 @@ function attachDrag(el, id) {
       if (ghost) {
         if (overSlot(ev.clientX, ev.clientY)) {
           el.classList.remove('used');
+          closeSheet();
           placeMine(id, ghost).then(() => ghost.remove());
           ghost.style.visibility = 'hidden';
-          closeSheet();
         } else {
           // spring back to the tray
           const t = ghost.style.translate;
@@ -762,8 +841,8 @@ function attachDrag(el, id) {
             .then(() => { ghost.remove(); el.classList.remove('used'); });
         }
       } else if (ev.type === 'pointerup') {
-        placeMine(id);
         closeSheet();
+        placeMine(id);
       }
     };
     window.addEventListener('pointermove', move);
@@ -777,7 +856,7 @@ async function start(first) {
   const run = Date.now();
   state = { run, mine: null, gramIndex: 0, locked: false, ready: false, busy: false };
   closeSheet();
-  document.querySelectorAll('.fly, .dot, .ring').forEach((n) => n.remove());
+  document.querySelectorAll('.fly, .dot, .ring, .spark').forEach((n) => n.remove());
 
   clearAnims(trade);
   trade.hidden = false;
@@ -820,6 +899,8 @@ async function start(first) {
   ], S.bouncy).then(() => clearAnims(g));
   haptic('medium');
   setGram(left, 0, THEIR_GRAM);
+  ripple($('.slot', left), { count: 1, scale: 1.5, color: 'rgba(255,255,255,.35)' });
+  setTimeout(() => alive(run) && twitch($('.slot .gift', left), 0.7), 700);
   state.ready = true;
   // gentle invite on your empty slot
   anim(mySlot, [{ transform: 'scale(1)' }, { transform: 'scale(1.05)', offset: 0.4 }, { transform: 'scale(1)' }], S.wobbly, { delay: 600 });
