@@ -341,9 +341,8 @@ async function placeMine(id, fromEl) {
   clone.remove();
   if (!alive(run)) return;
   putInSlot(right, g);
-  // no shaking — the gift just settles in with a ripple and a little confetti
+  // no shaking — the gift just settles in with a ripple
   ripple(mySlot, { count: 2, scale: 1.6, color: 'rgba(255,255,255,.45)' });
-  confetti(mySlot, 22);
   haptic('medium');
   myBtn.disabled = false;
   state.busy = false;
