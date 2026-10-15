@@ -305,3 +305,54 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
 :root.short .row { height: 36px; font-size: 14px; }
 :root.short .done-btn { height: 40px; margin-top: 8px; font-size: 16px; }
 :root.short .sheet-hint { font-size: 11px; }
+
+/* ================= real Telegram gifts ================= */
+.gift { overflow: visible !important; background: none !important; box-shadow: none !important; border-radius: 22%;
+  container-type: inline-size; }
+.gift::after { display: none !important; }
+.gift .face { position: absolute; inset: 0; border-radius: inherit; overflow: hidden;
+  background: radial-gradient(circle at 50% 42%, var(--c1) 0%, var(--c2) 78%);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, .38), inset 0 1px 0 rgba(255, 255, 255, .28); }
+.gift .face::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background: linear-gradient(160deg, rgba(255, 255, 255, .18), transparent 38%); }
+.gift .pattern { position: absolute; inset: 0; background: var(--pc); opacity: .32;
+  -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; }
+.gift .sticker { position: absolute; inset: 9% 9% 7%; pointer-events: none; }
+.gift .sticker svg { width: 100% !important; height: 100% !important; }
+
+/* corner ribbon: sticks out past the top and right edges, folds tucked behind — iOS glass */
+.gift .ribbon { position: absolute; top: -3.5cqw; right: -3.5cqw; width: 58cqw; height: 58cqw; overflow: hidden;
+  pointer-events: none; z-index: 2; }
+.gift .ribbon::before, .gift .ribbon::after { content: ""; position: absolute; z-index: -1; border: 1.75cqw solid;
+  border-color: color-mix(in srgb, var(--c2) 45%, black); border-top-color: transparent; border-right-color: transparent; }
+.gift .ribbon::before { top: 0; left: 0; }
+.gift .ribbon::after { bottom: 0; right: 0; }
+.gift .ribbon b { position: absolute; left: -9cqw; top: 11.5cqw; width: 86cqw; transform: rotate(45deg);
+  padding: 1.9cqw 0 1.7cqw; text-align: center; color: #fff;
+  font: 800 max(7px, 10.5cqw)/1 -apple-system, "SF Pro Rounded", "SF Pro Display", system-ui, sans-serif; letter-spacing: .01em;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, .3);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .34) 0%, rgba(255, 255, 255, .08) 45%, rgba(0, 0, 0, .08) 100%),
+    color-mix(in srgb, var(--c2) 72%, transparent);
+  -webkit-backdrop-filter: blur(6px) saturate(170%); backdrop-filter: blur(6px) saturate(170%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .5), inset 0 -1px 0 rgba(0, 0, 0, .18), 0 2px 6px rgba(0, 0, 0, .3); }
+
+/* empty placeholder in the tray */
+.tray .gift.used .face, .tray .gift.used .ribbon { opacity: 0; }
+.tray .gift.used { background: rgba(255, 255, 255, .05) !important; }
+.sheet .tray { grid-template-columns: repeat(4, 1fr); gap: 12px 10px; }
+#result .trade-head .tm { position: static; margin-left: 2px; font-size: 12px; font-weight: 400; color: var(--label-2); }
+
+/* ---- ribbon v2: matches Telegram's gift cards ----
+   a wide diagonal band whose ends are cut straight, just past the card's top and right edges */
+.gift .ribbon { top: -2.2cqw; right: -2.2cqw; width: 50cqw; height: 50cqw; overflow: hidden; }
+.gift .ribbon::before, .gift .ribbon::after { display: none; }
+.gift .ribbon b { left: -19cqw; top: 12.3cqw; width: 100cqw; height: 13.4cqw; padding: 0; transform: rotate(45deg);
+  display: flex; align-items: center; justify-content: center;
+  font: 800 max(7px, 9.6cqw)/1 -apple-system, "SF Pro Rounded", "SF Pro Display", system-ui, sans-serif; letter-spacing: -.01em;
+  color: #fff; text-shadow: 0 .5px 1px rgba(0, 0, 0, .25);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .22) 0%, rgba(255, 255, 255, 0) 55%),
+    color-mix(in srgb, color-mix(in srgb, var(--c1) 45%, var(--c2)) 88%, white);
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+  box-shadow: inset 0 .5px 0 rgba(255, 255, 255, .45), 0 1px 3px rgba(0, 0, 0, .18); }

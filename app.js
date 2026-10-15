@@ -78,14 +78,33 @@ const center = (el) => {
 };
 
 /* ---------- data ---------- */
-const THEIR_GIFT = { id: 'cat', name: 'Scared Cat', num: '14081', sub: 'Azuki Siam', art: '🙀', bg: 'linear-gradient(135deg,#d8774f,#b04a2c)' };
+// real Telegram collectibles, downloaded by tools/fetch-gifts.mjs into ./gifts
+const THEIR_SLUG = 'ScaredCat-14081';
+const MY_SLUGS = ['ResistanceDog-5', 'ResistanceDog-8', 'LolPop-1', 'PlushPepe-1', 'ToyBear-10', 'DurovsCap-10', 'KissedFrog-10'];
+let THEIR_GIFT = null;
+let MY_GIFTS = [];
 const THEIR_GRAM = 350;
-const MY_GIFTS = [
-  { id: 'wand', name: 'Magic Torch', num: '249912', sub: 'Lilac Dream', art: '🪄', bg: 'linear-gradient(135deg,#7f8bff,#4e45d6)' },
-  { id: 'pyr', name: 'Eye Pyramid', num: '19020', sub: 'Golden Age', art: '🔺', bg: 'linear-gradient(135deg,#f3b74a,#c97a1c)' },
-  { id: 'ramen', name: 'Ramen Bowl', num: '3511', sub: 'Mint Broth', art: '🍜', bg: 'linear-gradient(135deg,#4fd1a5,#1f8f73)' },
-  { id: 'dog', name: 'Resistance Dog', num: '8833', sub: 'Plush Pepe', art: '🐸', bg: 'linear-gradient(135deg,#e85a4f,#b52d2d)' },
-];
+const lottieCache = new Map();
+
+async function loadGifts() {
+  const index = await (await fetch('gifts/index.json?v=1')).json();
+  const toGift = (d) => ({
+    id: d.slug, name: d.name, num: d.num, sub: d.model?.value || '',
+    c1: d.colors.center, c2: d.colors.edge, pc: d.colors.pattern,
+    symbol: d.files.symbol && `gifts/${d.files.symbol}`, lottie: `gifts/${d.files.lottie}`,
+  });
+  THEIR_GIFT = toGift(index[THEIR_SLUG]);
+  MY_GIFTS = MY_SLUGS.filter((s) => index[s]).map((s) => toGift(index[s]));
+  // warm the animation cache so gifts appear instantly
+  await Promise.all([THEIR_GIFT, ...MY_GIFTS].map((g) => lottieText(g)));
+}
+function lottieText(g) {
+  if (!lottieCache.has(g.lottie)) lottieCache.set(g.lottie, fetch(g.lottie).then((r) => r.text()));
+  return lottieCache.get(g.lottie);
+}
+
+/* symbols scattered around the gift like on Telegram's backdrop: [x%, y%, size%] */
+const PATTERN = [[50, 9, 13], [20, 20, 11], [80, 20, 11], [8, 48, 10], [92, 48, 10], [18, 80, 11], [82, 80, 11], [50, 92, 11], [35, 4, 7], [65, 4, 7]];
 const GRAM_OPTIONS = [0, 50, 100, 250, 500];
 const MY_BALANCE = 1240;
 const fmtNum = (n) => n.toLocaleString('ru-RU');
@@ -117,12 +136,37 @@ const alive = (run) => run === state.run;
 function giftEl(g) {
   const el = document.createElement('div');
   el.className = 'gift';
-  el.style.background = g.bg;
-  el.style.setProperty('--d', `${-Math.random() * 2.8}s`);
-  el.innerHTML = `<span class="art">${g.art}</span><span class="num">#${g.num}</span>`;
   el.dataset.id = g.id;
+  el.style.setProperty('--c1', g.c1);
+  el.style.setProperty('--c2', g.c2);
+  el.style.setProperty('--pc', g.pc);
+  el.innerHTML = '<div class="face"><div class="pattern"></div><div class="sticker"></div></div>' +
+    `<span class="ribbon"><b>#${g.num}</b></span>`;
+  if (g.symbol) {
+    const p = $('.pattern', el);
+    const url = `url("${g.symbol}")`;
+    p.style.webkitMaskImage = p.style.maskImage = PATTERN.map(() => url).join(',');
+    p.style.webkitMaskPosition = p.style.maskPosition = PATTERN.map(([x, y]) => `${x}% ${y}%`).join(',');
+    p.style.webkitMaskSize = p.style.maskSize = PATTERN.map(([, , s]) => `${s}% ${s}%`).join(',');
+  }
+  // the Telegram sticker animation (Lottie from the .tgs)
+  const host = $('.sticker', el);
+  lottieText(g).then((txt) => {
+    if (!window.lottie || !el.isConnected) return; // already gone (e.g. a short-lived flying copy)
+    host._anim = window.lottie?.loadAnimation({
+      container: host, renderer: 'svg', loop: true, autoplay: true, animationData: JSON.parse(txt),
+      rendererSettings: { preserveAspectRatio: 'xMidYMid meet', progressiveLoad: true },
+    });
+  });
   return el;
 }
+
+// stop and free Lottie players when their gift leaves the page
+new MutationObserver((list) => list.forEach((m) => m.removedNodes.forEach((n) => {
+  if (n.nodeType !== 1) return;
+  const hosts = n.classList?.contains('sticker') ? [n] : n.querySelectorAll?.('.sticker') || [];
+  hosts.forEach((h) => { if (!h.isConnected && h._anim) { h._anim.destroy(); h._anim = null; } });
+}))).observe(document.body, { childList: true, subtree: true });
 
 function setLabel(btn, html, animate = true) {
   const label = $('.label', btn);
@@ -924,4 +968,4 @@ $('#again').addEventListener('click', async () => {
   start(false);
 });
 
-start(true);
+loadGifts().then(() => start(true));

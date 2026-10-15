@@ -1,0 +1,226 @@
+{
+  "ResistanceDog-5": {
+    "slug": "ResistanceDog-5",
+    "name": "Resistance Dog",
+    "num": "5",
+    "model": {
+      "value": "Tiger",
+      "rarity": "1%"
+    },
+    "backdrop": {
+      "value": "Steel Grey",
+      "rarity": "1.7%"
+    },
+    "symbol": {
+      "value": "Coconut",
+      "rarity": "0.4%"
+    },
+    "quantity": "14 215/17 247 issued",
+    "colors": {
+      "center": "#97a2ac",
+      "edge": "#63727c",
+      "pattern": "#334552"
+    },
+    "files": {
+      "lottie": "ResistanceDog-5.json",
+      "symbol": "ResistanceDog-5-symbol.webp",
+      "preview": "ResistanceDog-5.jpg"
+    }
+  },
+  "ResistanceDog-8": {
+    "slug": "ResistanceDog-8",
+    "name": "Resistance Dog",
+    "num": "8",
+    "model": {
+      "value": "Encrypted",
+      "rarity": "0.2%"
+    },
+    "backdrop": {
+      "value": "Battleship Grey",
+      "rarity": "1.9%"
+    },
+    "symbol": {
+      "value": "Bull of Heaven",
+      "rarity": "0.5%"
+    },
+    "quantity": "14 215/17 247 issued",
+    "colors": {
+      "center": "#8c8c85",
+      "edge": "#6c6c66",
+      "pattern": "#2b2a20"
+    },
+    "files": {
+      "lottie": "ResistanceDog-8.json",
+      "symbol": "ResistanceDog-8-symbol.webp",
+      "preview": "ResistanceDog-8.jpg"
+    }
+  },
+  "LolPop-1": {
+    "slug": "LolPop-1",
+    "name": "Lol Pop",
+    "num": "1",
+    "model": {
+      "value": "Portable Pop",
+      "rarity": "1%"
+    },
+    "backdrop": {
+      "value": "Mint Green",
+      "rarity": "1.5%"
+    },
+    "symbol": {
+      "value": "Teru Bōzu",
+      "rarity": "0.4%"
+    },
+    "quantity": "434 991/468 745 issued",
+    "colors": {
+      "center": "#7ecb82",
+      "edge": "#459e5a",
+      "pattern": "#026b22"
+    },
+    "files": {
+      "lottie": "LolPop-1.json",
+      "symbol": "LolPop-1-symbol.webp",
+      "preview": "LolPop-1.jpg"
+    }
+  },
+  "ScaredCat-14081": {
+    "slug": "ScaredCat-14081",
+    "name": "Scared Cat",
+    "num": "14081",
+    "model": {
+      "value": "Azuki Siam",
+      "rarity": "0.5%"
+    },
+    "backdrop": {
+      "value": "Chestnut",
+      "rarity": "1%"
+    },
+    "symbol": {
+      "value": "Fish Skeleton",
+      "rarity": "2.4%"
+    },
+    "quantity": "19 289/19 289 issued",
+    "colors": {
+      "center": "#be6f54",
+      "edge": "#994838",
+      "pattern": "#601508"
+    },
+    "files": {
+      "lottie": "ScaredCat-14081.json",
+      "symbol": "ScaredCat-14081-symbol.webp",
+      "preview": "ScaredCat-14081.jpg"
+    }
+  },
+  "PlushPepe-1": {
+    "slug": "PlushPepe-1",
+    "name": "Plush Pepe",
+    "num": "1",
+    "model": {
+      "value": "Pumpkin",
+      "rarity": "3%"
+    },
+    "backdrop": {
+      "value": "Onyx Black",
+      "rarity": "2%"
+    },
+    "symbol": {
+      "value": "Illuminati",
+      "rarity": "0.5%"
+    },
+    "quantity": "2 825/2 861 issued",
+    "colors": {
+      "center": "#4d5254",
+      "edge": "#313638",
+      "pattern": "#000000"
+    },
+    "files": {
+      "lottie": "PlushPepe-1.json",
+      "symbol": "PlushPepe-1-symbol.webp",
+      "preview": "PlushPepe-1.jpg"
+    }
+  },
+  "ToyBear-10": {
+    "slug": "ToyBear-10",
+    "name": "Toy Bear",
+    "num": "10",
+    "model": {
+      "value": "Los Muertos",
+      "rarity": "1.5%"
+    },
+    "backdrop": {
+      "value": "Onyx Black",
+      "rarity": "1.5%"
+    },
+    "symbol": {
+      "value": "Lingerie",
+      "rarity": "0.2%"
+    },
+    "quantity": "56 226/57 724 issued",
+    "colors": {
+      "center": "#4d5254",
+      "edge": "#313638",
+      "pattern": "#000000"
+    },
+    "files": {
+      "lottie": "ToyBear-10.json",
+      "symbol": "ToyBear-10-symbol.webp",
+      "preview": "ToyBear-10.jpg"
+    }
+  },
+  "DurovsCap-10": {
+    "slug": "DurovsCap-10",
+    "name": "Durov’s Cap",
+    "num": "10",
+    "model": {
+      "value": "Corkwood",
+      "rarity": "2%"
+    },
+    "backdrop": {
+      "value": "Persimmon",
+      "rarity": "2%"
+    },
+    "symbol": {
+      "value": "Sauron",
+      "rarity": "0.5%"
+    },
+    "quantity": "4 710/4 774 issued",
+    "colors": {
+      "center": "#e7a75a",
+      "edge": "#c5675f",
+      "pattern": "#ad0e00"
+    },
+    "files": {
+      "lottie": "DurovsCap-10.json",
+      "symbol": "DurovsCap-10-symbol.webp",
+      "preview": "DurovsCap-10.jpg"
+    }
+  },
+  "KissedFrog-10": {
+    "slug": "KissedFrog-10",
+    "name": "Kissed Frog",
+    "num": "10",
+    "model": {
+      "value": "Brownie",
+      "rarity": "4%"
+    },
+    "backdrop": {
+      "value": "Purple",
+      "rarity": "2%"
+    },
+    "symbol": {
+      "value": "Cat Mask",
+      "rarity": "0.4%"
+    },
+    "quantity": "14 089/14 278 issued",
+    "colors": {
+      "center": "#ae6cae",
+      "edge": "#844784",
+      "pattern": "#470c47"
+    },
+    "files": {
+      "lottie": "KissedFrog-10.json",
+      "symbol": "KissedFrog-10-symbol.webp",
+      "preview": "KissedFrog-10.jpg"
+    }
+  }
+}
