@@ -10,28 +10,50 @@
 <body>
 <div class="app">
   <header class="top">
-    <button class="pill back" id="restart" aria-label="Заново"><span class="chev">‹</span><span class="badge">12</span></button>
-    <div class="pill title">
-      <div class="name">ТИТАН <span class="emoji">🧙</span></div>
-      <div class="status" id="status">в сети</div>
-    </div>
-    <div class="avatar">🥷</div>
+    <div class="h-title">⇄ Обмен</div>
+    <div class="h-sub">с <b>ТИТАН</b> 🥷 · <span id="status">в сети</span></div>
   </header>
 
-  <main class="chat" id="chat">
-    <div class="date">Сегодня</div>
-  </main>
+  <main class="stage">
+    <section class="trade" id="trade">
+      <div class="sides">
+        <div class="side left">
+          <div class="side-head"><span class="mini">🥷</span>ТИТАН <span class="sub"></span></div>
+          <div class="slot">+</div>
+          <div class="gname"></div><div class="gsub"></div>
+          <div class="gram">+ GRAM</div>
+          <button class="btn" disabled>Подтвердить</button>
+        </div>
+        <div class="lock">🔓</div>
+        <div class="side right">
+          <div class="side-head"><span class="mini">🟣</span>Вы</div>
+          <div class="slot mine">+</div>
+          <div class="gname"></div><div class="gsub"></div>
+          <div class="gram">+ GRAM</div>
+          <button class="btn" id="confirm" disabled>Подтвердить</button>
+        </div>
+      </div>
+    </section>
 
-  <footer class="composer">
-    <button class="icon" aria-label="Вложение">📎</button>
-    <form class="field" id="form"><input id="input" placeholder="Сообщение" autocomplete="off"></form>
-    <button class="icon" aria-label="Голос">🎙</button>
-  </footer>
+    <section class="trade done" id="result" hidden>
+      <div class="trade-head"><span class="ok">✓</span> Обмен завершён <span class="tm" id="time"></span></div>
+      <div class="result">
+        <div class="cell" id="sent"></div>
+        <div class="mid">⇄<div class="gram on" id="diff"></div></div>
+        <div class="cell" id="got"></div>
+      </div>
+      <button class="btn green again" id="again">Новый обмен</button>
+    </section>
+
+    <p class="hint-line" id="hint">ТИТАН выбирает подарок…</p>
+  </main>
 
   <section class="sheet" id="sheet">
     <div class="grab"></div>
-    <div class="sheet-title">Ваши подарки <span id="count">4</span></div>
+    <div class="sheet-title">Ваши подарки <span id="count"></span></div>
     <div class="tray" id="tray"></div>
+    <div class="sheet-title small">Ваша доплата</div>
+    <div class="chips" id="chips"></div>
     <div class="hint">Перетащите подарок на стол — или просто нажмите</div>
   </section>
 </div>

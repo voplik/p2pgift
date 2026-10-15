@@ -11,34 +11,30 @@ const notify = (type) => tg?.HapticFeedback?.notificationOccurred(type);
 
 const $ = (s, r = document) => r.querySelector(s);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const chat = $('#chat');
-const statusEl = $('#status');
+
+const trade = $('#trade');
+const result = $('#result');
+const left = $('.left', trade);
+const right = $('.right', trade);
+const mySlot = $('.slot', right);
+const myBtn = $('#confirm');
 const sheet = $('#sheet');
 const tray = $('#tray');
+const chips = $('#chips');
+const hint = $('#hint');
+const statusEl = $('#status');
 
 const THEIR_GIFT = { id: 'cat', name: 'Scared Cat', num: '14081', sub: 'Azuki Siam', art: '🐈', bg: 'linear-gradient(135deg,#d8774f,#b04a2c)' };
+const THEIR_GRAM = 350;
 const MY_GIFTS = [
   { id: 'wand', name: 'Magic Torch', num: '249912', sub: 'Lilac Dream', art: '🪄', bg: 'linear-gradient(135deg,#7f8bff,#4e45d6)' },
   { id: 'pyr', name: 'Eye Pyramid', num: '19020', sub: 'Golden Age', art: '🔺', bg: 'linear-gradient(135deg,#f3b74a,#c97a1c)' },
   { id: 'ramen', name: 'Ramen Bowl', num: '3511', sub: 'Mint Broth', art: '🍜', bg: 'linear-gradient(135deg,#4fd1a5,#1f8f73)' },
   { id: 'dog', name: 'Resistance Dog', num: '8833', sub: 'Plush Pepe', art: '🐸', bg: 'linear-gradient(135deg,#e85a4f,#b52d2d)' },
 ];
+const GRAM_OPTIONS = [0, 50, 100, 250];
 
-const SCRIPT = [
-  ['in', 'глянул твой профиль', '21:48'],
-  ['in', 'пепе на кармине ещё у тебя?', '21:48'],
-  ['out', 'у меня, не продаю', '21:49'],
-  ['in', 'а на кота? азуки сиам, #14081', '21:51'],
-  ['out', 'только с доплатой', '21:51'],
-  ['in', '+350 GRAM. кидаю обмен', '21:51'],
-];
-
-let state; // { mine, run, card }
-
-function now() {
-  const d = new Date();
-  return `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
-}
+let state;
 
 function giftEl(g) {
   const el = document.createElement('div');
@@ -49,67 +45,9 @@ function giftEl(g) {
   return el;
 }
 
-function scrollDown() {
-  chat.scrollTop = chat.scrollHeight;
-}
-
-function addMsg(side, text, time = now()) {
-  const m = document.createElement('div');
-  m.className = `msg ${side}`;
-  m.innerHTML = `<span class="t">${time}</span>`;
-  m.prepend(document.createTextNode(text));
-  chat.append(m);
-  scrollDown();
-  return m;
-}
-
-async function typing(ms, run) {
-  statusEl.textContent = 'печатает…';
-  statusEl.classList.add('typing');
-  await sleep(ms);
-  statusEl.textContent = 'в сети';
-  statusEl.classList.remove('typing');
-  return run === state.run;
-}
-
-/* ---------- exchange card ---------- */
-function buildCard() {
-  const card = document.createElement('div');
-  card.className = 'trade';
-  card.innerHTML = `
-    <div class="trade-head"><span>⇄</span> <span class="ttl">Обмен</span></div>
-    <div class="sides">
-      <div class="side left">
-        <div class="side-head"><span class="mini">🥷</span>ТИТАН <span class="sub"></span></div>
-        <div class="slot"></div>
-        <div class="gname"></div><div class="gsub"></div>
-        <div class="gram">+ GRAM</div>
-        <button class="btn" disabled>Подтвердить</button>
-      </div>
-      <div class="lock">🔓</div>
-      <div class="side right">
-        <div class="side-head"><span class="mini">🟣</span>Вы</div>
-        <div class="slot mine">+</div>
-        <div class="gname"></div><div class="gsub"></div>
-        <div class="gram">+ GRAM</div>
-        <button class="btn" disabled>Подтвердить</button>
-      </div>
-    </div>`;
-  chat.append(card);
-  scrollDown();
-
-  const left = $('.left', card);
-  const right = $('.right', card);
-  const myBtn = $('.btn', right);
-  const mySlot = $('.slot', right);
-
-  mySlot.addEventListener('click', () => {
-    if (state.locked) return;
-    if (state.mine) removeMine();
-    else openSheet();
-  });
-  myBtn.addEventListener('click', confirmMine);
-  return { card, left, right, myBtn, mySlot };
+function setStatus(text, active = false) {
+  statusEl.textContent = text;
+  statusEl.classList.toggle('typing', active);
 }
 
 function fillSlot(side, g) {
@@ -129,39 +67,62 @@ function clearSlot(side) {
   $('.gsub', side).textContent = '';
 }
 
-function placeMine(id) {
-  const g = MY_GIFTS.find((x) => x.id === id);
-  if (!g || state.locked) return;
-  if (state.mine) removeMine();
-  state.mine = g;
-  fillSlot(state.card.right, g);
-  tray.querySelector(`[data-id="${id}"]`)?.classList.add('used');
-  state.card.myBtn.disabled = false;
-  haptic('medium');
-  closeSheet();
+function setGram(side, amount) {
+  const g = $('.gram', side);
+  g.classList.toggle('on', amount > 0);
+  g.textContent = amount > 0 ? `💎 ${amount} GRAM` : '+ GRAM';
 }
 
-function removeMine() {
+function updateHint() {
+  if (state.locked) return;
+  hint.textContent = state.mine ? 'Проверьте обмен и нажмите «Подтвердить»' : 'Положите свой подарок на стол';
+}
+
+/* ---------- your side ---------- */
+function placeMine(id) {
+  const g = MY_GIFTS.find((x) => x.id === id);
+  if (!g || state.locked || !state.ready) return;
+  if (state.mine) removeMine(true);
+  state.mine = g;
+  fillSlot(right, g);
+  tray.querySelector(`[data-id="${id}"]`)?.classList.add('used');
+  myBtn.disabled = false;
+  haptic('medium');
+  updateHint();
+}
+
+function removeMine(silent) {
   tray.querySelector(`[data-id="${state.mine.id}"]`)?.classList.remove('used');
   state.mine = null;
-  clearSlot(state.card.right);
-  state.card.myBtn.disabled = true;
+  clearSlot(right);
+  myBtn.disabled = true;
+  if (!silent) haptic();
+  updateHint();
+}
+
+function setMyGram(amount) {
+  if (state.locked) return;
+  state.myGram = amount;
+  setGram(right, amount);
+  chips.querySelectorAll('.chip').forEach((c) => c.classList.toggle('on', +c.dataset.v === amount));
   haptic();
 }
 
 async function confirmMine() {
   if (!state.mine || state.locked) return;
   const run = state.run;
-  const { left, right, myBtn, card } = state.card;
   state.locked = true;
   haptic('heavy');
+  sheet.classList.remove('open');
   myBtn.className = 'btn green';
   myBtn.textContent = '✓ Подтверждено';
   $('.side-head', right).insertAdjacentHTML('beforeend', '<span class="ok">✓</span>');
+  hint.textContent = 'Ждём подтверждение ТИТАН…';
 
   // counterpart confirms with a progress fill
   const theirBtn = $('.btn', left);
   $('.sub', left).textContent = 'подтверждает…';
+  setStatus('подтверждает…', true);
   theirBtn.classList.add('wait');
   for (let p = 0; p <= 100; p += 4) {
     theirBtn.style.setProperty('--p', p + '%');
@@ -171,49 +132,35 @@ async function confirmMine() {
   theirBtn.className = 'btn green';
   theirBtn.textContent = '✓ Подтверждено';
   $('.sub', left).textContent = '';
+  setStatus('в сети');
   $('.side-head', left).insertAdjacentHTML('beforeend', '<span class="ok">✓</span>');
   haptic('heavy');
+  hint.textContent = 'Обмениваемся…';
 
-  await sleep(500);
+  await sleep(400);
   if (run !== state.run) return;
-  $('.lock', card).classList.add('done');
-  $('.lock', card).textContent = '🔒';
-  card.classList.add('swapping');
+  $('.lock', trade).classList.add('done');
+  $('.lock', trade).textContent = '🔒';
+  trade.classList.add('swapping');
   await sleep(900);
   if (run !== state.run) return;
   notify('success');
   showResult();
-
-  if (!(await typing(1400, run))) return;
-  addMsg('in', 'чётко, и без гаранта');
 }
 
 function showResult() {
-  const { card } = state.card;
-  card.classList.remove('swapping');
-  card.innerHTML = `
-    <div class="trade-head"><span class="ok">✓</span> Обмен завершён <span class="tm">${now()}</span></div>
-    <div class="result">
-      <div class="cell a"></div>
-      <div class="mid">⇄<div class="gram on">💎 +350 GRAM</div></div>
-      <div class="cell b"></div>
-    </div>`;
-  const a = $('.cell.a', card);
-  const b = $('.cell.b', card);
-  a.append(giftEl(state.mine), 'отправлено');
-  b.append(giftEl(THEIR_GIFT), 'получено');
-  scrollDown();
+  trade.hidden = true;
+  result.hidden = false;
+  const d = new Date();
+  $('#time').textContent = `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
+  const diff = THEIR_GRAM - state.myGram;
+  $('#diff').textContent = `💎 ${diff >= 0 ? '+' : ''}${diff} GRAM`;
+  $('#sent').replaceChildren(giftEl(state.mine), 'отправлено');
+  $('#got').replaceChildren(giftEl(THEIR_GIFT), 'получено');
+  hint.textContent = 'Подарки переданы напрямую, без гаранта';
 }
 
-/* ---------- bottom sheet & drag ---------- */
-function openSheet() {
-  sheet.classList.add('open');
-  haptic();
-}
-function closeSheet() {
-  sheet.classList.remove('open');
-}
-
+/* ---------- tray & drag ---------- */
 function renderTray() {
   tray.textContent = '';
   MY_GIFTS.forEach((g) => {
@@ -222,6 +169,16 @@ function renderTray() {
     attachDrag(el, g.id);
   });
   $('#count').textContent = MY_GIFTS.length;
+
+  chips.textContent = '';
+  GRAM_OPTIONS.forEach((v) => {
+    const c = document.createElement('button');
+    c.className = 'chip' + (v === 0 ? ' on' : '');
+    c.dataset.v = v;
+    c.textContent = v ? `${v} 💎` : 'Без';
+    c.onclick = () => setMyGram(v);
+    chips.append(c);
+  });
 }
 
 function attachDrag(el, id) {
@@ -230,11 +187,9 @@ function attachDrag(el, id) {
     const sx = e.clientX;
     const sy = e.clientY;
     let ghost = null;
-    const slot = state.card?.mySlot;
 
     const overSlot = (x, y) => {
-      if (!slot) return false;
-      const r = slot.getBoundingClientRect();
+      const r = mySlot.getBoundingClientRect();
       return x > r.left - 20 && x < r.right + 20 && y > r.top - 20 && y < r.bottom + 20;
     };
     const move = (ev) => {
@@ -243,13 +198,12 @@ function attachDrag(el, id) {
         ghost.classList.add('ghost');
         document.body.append(ghost);
         el.style.opacity = '.3';
-        sheet.style.transform = 'translateY(55%)';
         haptic();
       }
       if (ghost) {
         ghost.style.left = ev.clientX + 'px';
         ghost.style.top = ev.clientY + 'px';
-        slot?.classList.toggle('drop', overSlot(ev.clientX, ev.clientY));
+        mySlot.classList.toggle('drop', overSlot(ev.clientX, ev.clientY));
       }
     };
     const up = (ev) => {
@@ -257,8 +211,7 @@ function attachDrag(el, id) {
       window.removeEventListener('pointerup', up);
       window.removeEventListener('pointercancel', up);
       el.style.opacity = '';
-      sheet.style.transform = '';
-      slot?.classList.remove('drop');
+      mySlot.classList.remove('drop');
       if (ghost) {
         ghost.remove();
         if (overSlot(ev.clientX, ev.clientY)) placeMine(id);
@@ -272,55 +225,51 @@ function attachDrag(el, id) {
   });
 }
 
-/* ---------- scenario ---------- */
+/* ---------- lifecycle ---------- */
 async function start() {
   const run = Date.now();
-  state = { run, mine: null, locked: false, card: null };
-  chat.innerHTML = '<div class="date">Сегодня</div>';
-  closeSheet();
+  state = { run, mine: null, myGram: 0, locked: false, ready: false };
+
+  trade.hidden = false;
+  result.hidden = true;
+  trade.classList.remove('swapping');
+  [left, right].forEach((side) => {
+    clearSlot(side);
+    setGram(side, 0);
+    const btn = $('.btn', side);
+    btn.className = 'btn';
+    btn.textContent = 'Подтвердить';
+    btn.disabled = true;
+    btn.style.removeProperty('--p');
+    $('.side-head .ok', side)?.remove();
+  });
+  $('.sub', left).textContent = '';
+  $('.lock', trade).classList.remove('done');
+  $('.lock', trade).textContent = '🔓';
   renderTray();
 
-  for (const [side, text, time] of SCRIPT) {
-    if (side === 'in') {
-      if (!(await typing(650, run))) return;
-    } else {
-      await sleep(450);
-      if (run !== state.run) return;
-    }
-    addMsg(side, text, time);
-  }
-
-  await sleep(500);
+  hint.textContent = 'ТИТАН выбирает подарок…';
+  setStatus('кладёт подарок…', true);
+  await sleep(900);
   if (run !== state.run) return;
-  state.card = buildCard();
-  await sleep(500);
-  if (run !== state.run) return;
-  fillSlot(state.card.left, THEIR_GIFT);
-  const g = $('.gram', state.card.left);
-  g.classList.add('on');
-  g.textContent = '💎 350 GRAM';
+  fillSlot(left, THEIR_GIFT);
+  setGram(left, THEIR_GRAM);
+  setStatus('в сети');
   haptic();
-  await sleep(500);
-  if (run !== state.run) return;
-  openSheet();
+  state.ready = true;
+  updateHint();
+  sheet.classList.add('open');
 }
 
-$('#restart').addEventListener('click', () => {
+mySlot.addEventListener('click', () => {
+  if (state.locked || !state.ready) return;
+  if (state.mine) removeMine();
+  sheet.classList.add('open');
+});
+myBtn.addEventListener('click', confirmMine);
+$('#again').addEventListener('click', () => {
   haptic();
   start();
-});
-
-$('#form').addEventListener('submit', (e) => {
-  e.preventDefault();
-  const v = $('#input').value.trim();
-  if (!v) return;
-  addMsg('out', v);
-  $('#input').value = '';
-});
-
-// tap outside the sheet closes it
-chat.addEventListener('click', (e) => {
-  if (!e.target.closest('.slot')) closeSheet();
 });
 
 start();
