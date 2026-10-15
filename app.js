@@ -55,7 +55,9 @@ function tween(el, keyframes, duration, extra = {}) {
 const clearAnims = (el) => el?.getAnimations().forEach((a) => a.cancel());
 function countUp(el, from, to, ms, fmt) {
   const t0 = performance.now();
+  const token = (el._count = (el._count || 0) + 1); // a newer count on the same element cancels this one
   const frame = (now) => {
+    if (el._count !== token) return;
     const k = Math.min(1, (now - t0) / ms);
     el.textContent = fmt(Math.round(from + (to - from) * (1 - Math.pow(1 - k, 3))));
     if (k < 1) requestAnimationFrame(frame);
@@ -76,13 +78,18 @@ const MY_GIFTS = [
   { id: 'ramen', name: 'Ramen Bowl', num: '3511', sub: 'Mint Broth', art: '🍜', bg: 'linear-gradient(135deg,#4fd1a5,#1f8f73)' },
   { id: 'dog', name: 'Resistance Dog', num: '8833', sub: 'Plush Pepe', art: '🐸', bg: 'linear-gradient(135deg,#e85a4f,#b52d2d)' },
 ];
-const GRAM_OPTIONS = [0, 50, 100, 250];
+const GRAM_OPTIONS = [0, 50, 100, 250, 500];
+const MY_BALANCE = 1240;
+const fmtNum = (n) => n.toLocaleString('ru-RU');
 const HOLD_MS = 1500;
 
 /* ---------- dom ---------- */
 const trade = $('#trade');
 const result = $('#result');
-const picker = $('#picker');
+const app = $('.app');
+const backdrop = $('#backdrop');
+const giftSheet = $('#giftSheet');
+const gramSheet = $('#gramSheet');
 const head = $('#head');
 const left = $('.left', trade);
 const right = $('.right', trade);
@@ -90,8 +97,10 @@ const mySlot = $('.slot', right);
 const myBtn = $('#confirm');
 const theirBtn = $('.btn', left);
 const tray = $('#tray');
-const seg = $('#chips');
-const thumb = $('#thumb');
+const gramList = $('#gramList');
+const gramBig = $('#gramBig');
+const giftCount = $('#giftCount');
+const balance = $('#balance');
 const lock = $('.lock', trade);
 
 let state;
@@ -159,19 +168,14 @@ function setGram(side, from, to, sign = '') {
   if (to > 0) {
     countUp(gv, from, to, 500, (n) => `${sign}${n} GRAM`);
     anim(gv, [{ transform: 'scale(.8)' }, { transform: 'none' }], S.wobbly);
-  } else gv.textContent = 'GRAM';
-}
-
-/* gram pills and buttons rise in once your gift is on the table (as in the video) */
-function showControls(show) {
-  const els = [...$$('.gram', trade), theirBtn, myBtn];
-  els.forEach((el, i) => {
-    clearAnims(el);
-    // animate to the element's own resting opacity (disabled buttons rest at .4), so nothing jumps afterwards
-    const rest = getComputedStyle(el).opacity;
-    if (show) anim(el, [{ opacity: 0, transform: 'translateY(14px) scale(.9)' }, { opacity: rest, transform: 'none' }], S.bouncy, { delay: i * 45 }).then(() => clearAnims(el));
-    else el.animate([{ opacity: 0, transform: 'translateY(14px) scale(.9)' }], { fill: 'both', duration: 1 });
-  });
+  } else {
+    // back to the empty pill: stop any running count and clear the number
+    gv._count = (gv._count || 0) + 1;
+    if (gv.textContent !== 'GRAM') {
+      gv.textContent = 'GRAM';
+      anim(gv, [{ opacity: 0, transform: 'scale(.8)' }, { opacity: 1, transform: 'none' }], S.snappy);
+    }
+  }
 }
 
 /* Moves a copy of `fromEl` onto `toEl` with a spring, like a matched-geometry transition */
@@ -234,9 +238,9 @@ async function placeMine(id, fromEl) {
   if (!g || state.locked || !state.ready || state.busy) return;
   state.busy = true;
   const run = state.run;
-  const first = !state.mine;
   if (state.mine) await removeMine(true);
   state.mine = g;
+  updateCount();
   const tile = tray.querySelector(`[data-id="${id}"]`);
   const source = fromEl || tile;
   // the tray tile becomes an empty placeholder
@@ -255,7 +259,6 @@ async function placeMine(id, fromEl) {
   anim($('.slot .gift', left), [{ transform: 'none' }, { transform: 'rotate(-4deg) scale(1.03)', offset: 0.3 }, { transform: 'none' }], S.wobbly, { delay: 120 });
   haptic('medium');
   myBtn.disabled = false;
-  if (first) showControls(true);
   state.busy = false;
 }
 
@@ -264,6 +267,7 @@ async function removeMine(quiet) {
   const giftInSlot = mySlot.querySelector('.gift');
   const target = tray.querySelector(`[data-id="${g.id}"]`);
   state.mine = null;
+  updateCount();
   myBtn.disabled = true;
   if (!quiet) haptic('light');
   if (giftInSlot && target) {
@@ -281,24 +285,131 @@ async function removeMine(quiet) {
   }
 }
 
+function updateCount() {
+  const n = MY_GIFTS.length - (state.mine ? 1 : 0);
+  if (giftCount.textContent !== String(n)) {
+    giftCount.textContent = n;
+    anim(giftCount.parentElement, [{ transform: 'scale(.85)' }, { transform: 'none' }], S.wobbly);
+  }
+}
+
 function selectGram(i, silent) {
   if (state.locked) return;
   const prev = state.gramIndex;
   state.gramIndex = i;
-  seg.querySelectorAll('.chip').forEach((c, j) => c.classList.toggle('on', j === i));
-  const fromX = `${prev * 100}%`;
-  const toX = `${i * 100}%`;
-  thumb.style.transform = `translateX(${toX})`;
-  if (silent) return;
+  $$('.row', gramList).forEach((r, j) => r.classList.toggle('on', j === i));
+  if (silent) {
+    gramBig.textContent = GRAM_OPTIONS[i];
+    return;
+  }
   tick();
-  // liquid thumb: stretches while moving, settles with a spring
-  anim(thumb, [
-    { transform: `translateX(${fromX}) scale(1, 1)` },
-    { transform: `translateX(calc((${fromX} + ${toX}) / 2)) scale(1.18, .88)`, offset: 0.3 },
-    { transform: `translateX(${toX}) scale(1, 1)` },
-  ], S.bouncy);
+  countUp(gramBig, GRAM_OPTIONS[prev], GRAM_OPTIONS[i], 380, (n) => n);
+  anim(gramBig.parentElement, [{ transform: 'scale(.9)' }, { transform: 'none' }], S.wobbly);
   setGram(right, GRAM_OPTIONS[prev], GRAM_OPTIONS[i]);
 }
+
+/* ---------- iOS sheets ---------- */
+let openSheetEl = null;
+const curTransform = (el) => getComputedStyle(el).transform;
+const curOpacity = (el) => getComputedStyle(el).opacity;
+
+function setBehind(on, s = S.soft) {
+  // the page behind recedes like an iOS card stack
+  const from = { transform: curTransform(app), filter: getComputedStyle(app).filter };
+  clearAnims(app);
+  const to = on ? { transform: 'scale(.94)', filter: 'brightness(.8)' } : { transform: 'none', filter: 'none' };
+  const p = on ? anim(app, [from, to], s) : tween(app, [from, to], 320);
+  if (!on) p.then(() => clearAnims(app));
+  const bo = curOpacity(backdrop);
+  clearAnims(backdrop);
+  tween(backdrop, [{ opacity: bo }, { opacity: on ? 1 : 0 }], on ? 320 : 280);
+  backdrop.classList.toggle('on', on);
+}
+
+function openSheet(sh) {
+  if (openSheetEl === sh || state.locked) return;
+  if (openSheetEl) closeSheet();
+  openSheetEl = sh;
+  sh.classList.add('open');
+  sh.style.transform = '';
+  clearAnims(sh);
+  anim(sh, [{ transform: 'translateY(110%)' }, { transform: 'translateY(0)' }], S.soft);
+  setBehind(true);
+  haptic('light');
+  if (sh === giftSheet) {
+    $$('.gift', tray).forEach((g, i) =>
+      anim(g, [{ opacity: 0, transform: 'translateY(24px) scale(.8)' }, { opacity: 1, transform: 'none' }], S.bouncy, { delay: 60 + i * 40 })
+        .then(() => clearAnims(g)));
+  }
+}
+
+async function closeSheet() {
+  const sh = openSheetEl;
+  if (!sh) return;
+  openSheetEl = null;
+  const from = curTransform(sh);
+  clearAnims(sh);
+  sh.style.transform = '';
+  setBehind(false);
+  await tween(sh, [{ transform: from }, { transform: 'translateY(110%)' }], 300);
+  if (openSheetEl !== sh) {
+    sh.classList.remove('open');
+    clearAnims(sh);
+  }
+}
+
+/* while a gift is dragged, the sheet ducks so the table is visible */
+function peekSheet(on) {
+  if (openSheetEl !== giftSheet) return;
+  const from = curTransform(giftSheet);
+  clearAnims(giftSheet);
+  anim(giftSheet, [{ transform: from }, { transform: on ? 'translateY(64%)' : 'translateY(0)' }], S.snappy);
+  const bo = curOpacity(backdrop);
+  clearAnims(backdrop);
+  tween(backdrop, [{ opacity: bo }, { opacity: on ? 0.25 : 1 }], 250);
+}
+
+/* swipe down on the grabber/header to dismiss, with rubber-banding upwards */
+function attachSheetSwipe(sh) {
+  const zone = [$('.grab-zone', sh), $('.sheet-head', sh)];
+  zone.forEach((z) => z.addEventListener('pointerdown', (e) => {
+    if (e.target.closest('[data-close]') || openSheetEl !== sh) return;
+    const y0 = e.clientY;
+    const t0 = performance.now();
+    const base = curTransform(sh);
+    clearAnims(sh);
+    sh.style.transform = base === 'none' ? 'translateY(0)' : base;
+    const h = sh.offsetHeight;
+    let dy = 0;
+    const move = (ev) => {
+      dy = ev.clientY - y0;
+      const y = dy > 0 ? dy : -Math.pow(-dy, 0.7); // resist pulling up
+      sh.style.transform = `translateY(${y}px)`;
+      backdrop.style.opacity = Math.max(0, 1 - Math.max(0, dy) / h);
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', up);
+      backdrop.style.opacity = '';
+      const v = dy / (performance.now() - t0);
+      if (dy > h * 0.3 || v > 0.6) {
+        closeSheet();
+      } else {
+        const from = sh.style.transform;
+        sh.style.transform = '';
+        anim(sh, [{ transform: from }, { transform: 'translateY(0)' }], S.bouncy);
+      }
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', up);
+  }));
+  $$('[data-close]', sh).forEach((b) => b.addEventListener('click', () => { haptic('light'); closeSheet(); }));
+}
+attachSheetSwipe(giftSheet);
+attachSheetSwipe(gramSheet);
+backdrop.addEventListener('click', () => closeSheet());
 
 /* ---------- hold to confirm ---------- */
 let hold = null;
@@ -391,7 +502,7 @@ function markConfirmed(btn, side) {
 async function confirmBoth() {
   const run = state.run;
   state.locked = true;
-  collapse(picker);
+  closeSheet();
   markConfirmed(myBtn, right);
   haptic('heavy');
 
@@ -552,25 +663,6 @@ async function collapseToResult(run) {
   anim($('.arrows', result), [{ transform: 'rotate(-180deg) scale(.5)' }, { transform: 'none' }], S.soft);
 }
 
-/* ---------- picker collapse / expand ---------- */
-async function collapse(el) {
-  const h = el.offsetHeight;
-  await tween(el, [
-    { height: h + 'px', opacity: 1, transform: 'none' },
-    { height: '0px', opacity: 0, transform: 'translateY(30px)' },
-  ], 420);
-  el.hidden = true;
-  clearAnims(el);
-}
-function expand(el) {
-  el.hidden = false;
-  const h = el.offsetHeight;
-  return anim(el, [
-    { height: '0px', opacity: 0, transform: 'translateY(40px)' },
-    { height: h + 'px', opacity: 1, transform: 'none' },
-  ], S.soft).then(() => clearAnims(el));
-}
-
 /* ---------- tray, segmented control, drag ---------- */
 function renderPicker() {
   tray.textContent = '';
@@ -579,23 +671,31 @@ function renderPicker() {
     tray.append(el);
     attachDrag(el, g.id);
   });
-  $('#count').textContent = MY_GIFTS.length;
 
-  seg.querySelectorAll('.chip').forEach((c) => c.remove());
+  gramList.textContent = '';
   GRAM_OPTIONS.forEach((v, i) => {
-    const c = document.createElement('button');
-    c.className = 'chip';
-    c.innerHTML = v ? `${ICON.dia}${v}` : 'Без';
-    c.onclick = () => selectGram(i);
-    seg.append(c);
+    const r = document.createElement('button');
+    r.className = 'row';
+    r.innerHTML = `${ICON.dia}<span class="grow">${v ? `${v} GRAM` : 'Без доплаты'}</span>` +
+      '<svg class="ic tick" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+    r.disabled = v > MY_BALANCE;
+    r.onclick = () => selectGram(i);
+    gramList.append(r);
   });
+  balance.textContent = fmtNum(MY_BALANCE);
+  giftCount.textContent = MY_GIFTS.length;
   state.gramIndex = 0;
   selectGram(0, true);
 }
 
 function attachDrag(el, id) {
   el.addEventListener('pointerdown', (e) => {
-    if (state.locked || !state.ready || state.busy || el.classList.contains('used')) return;
+    if (state.locked || !state.ready || state.busy) return;
+    if (el.classList.contains('used')) {
+      // tapping the empty tile of the gift on the table takes it back
+      if (state.mine?.id === id) removeMine();
+      return;
+    }
     e.preventDefault();
     el.classList.add('pressed');
     const sx = e.clientX;
@@ -619,6 +719,7 @@ function attachDrag(el, id) {
         el.classList.remove('pressed');
         el.classList.add('used');
         anim(ghost, [{ scale: '1', rotate: '0deg' }, { scale: '1.22', rotate: '10deg' }], S.bouncy);
+        peekSheet(true);
         haptic('light');
       }
       if (!ghost) return;
@@ -650,16 +751,19 @@ function attachDrag(el, id) {
           el.classList.remove('used');
           placeMine(id, ghost).then(() => ghost.remove());
           ghost.style.visibility = 'hidden';
+          closeSheet();
         } else {
           // spring back to the tray
           const t = ghost.style.translate;
           clearAnims(ghost);
           ghost.style.translate = '';
+          peekSheet(false);
           anim(ghost, [{ translate: t, scale: '1.22', rotate: '10deg' }, { translate: '0px 0px', scale: '1', rotate: '0deg' }], S.snappy)
             .then(() => { ghost.remove(); el.classList.remove('used'); });
         }
       } else if (ev.type === 'pointerup') {
         placeMine(id);
+        closeSheet();
       }
     };
     window.addEventListener('pointermove', move);
@@ -672,6 +776,7 @@ function attachDrag(el, id) {
 async function start(first) {
   const run = Date.now();
   state = { run, mine: null, gramIndex: 0, locked: false, ready: false, busy: false };
+  closeSheet();
   document.querySelectorAll('.fly, .dot, .ring').forEach((n) => n.remove());
 
   clearAnims(trade);
@@ -694,26 +799,15 @@ async function start(first) {
   sub.textContent = '';
   sub.classList.remove('on');
   renderPicker();
-  showControls(false);
 
   // 1) empty glass card, then its contents fade in one by one
-  const parts = [head, ...$$('.side-head', trade), $('.slot', left), lock, mySlot];
+  const parts = [head, ...$$('.side-head', trade), $('.slot', left), lock, mySlot, ...$$('.gram', trade), theirBtn, myBtn];
+  const rest = parts.map((p) => getComputedStyle(p).opacity); // disabled buttons rest at .4 — fade to that, not to 1
   parts.forEach((p) => p.animate([{ opacity: 0 }], { duration: 1, fill: 'both' }));
   await anim(trade, [{ opacity: 0, transform: 'translateY(20px) scale(.96)' }, { opacity: 1, transform: 'none' }], S.soft);
   if (!alive(run)) return;
   parts.forEach((p, i) =>
-    anim(p, [{ opacity: 0, transform: 'scale(.94)' }, { opacity: 1, transform: 'none' }], S.soft, { delay: i * 45 }).then(() => clearAnims(p)));
-
-  // 2) your gifts sheet slides up from the bottom
-  if (first) {
-    anim(picker, [{ opacity: 0, transform: 'translateY(60px)' }, { opacity: 1, transform: 'none' }], S.soft, { delay: 120 });
-  } else if (picker.hidden) {
-    expand(picker);
-  }
-  [...tray.children].forEach((g, i) =>
-    anim(g, [{ opacity: 0, transform: 'translateY(20px) scale(.7)' }, { opacity: 1, transform: 'none' }], S.bouncy, { delay: 200 + i * 50 })
-      .then(() => clearAnims(g)));
-  anim(seg, [{ opacity: 0, transform: 'translateY(12px)' }, { opacity: 1, transform: 'none' }], S.soft, { delay: 360 });
+    anim(p, [{ opacity: 0, transform: 'scale(.94)' }, { opacity: rest[i], transform: 'none' }], S.soft, { delay: i * 45 }).then(() => clearAnims(p)));
 
   // 3) counterpart's gift materialises out of the dark
   await sleep(500);
@@ -731,9 +825,16 @@ async function start(first) {
   anim(mySlot, [{ transform: 'scale(1)' }, { transform: 'scale(1.05)', offset: 0.4 }, { transform: 'scale(1)' }], S.wobbly, { delay: 600 });
 }
 
+// "+" (or your gift) opens the gift sheet; your GRAM pill opens the GRAM picker
 mySlot.addEventListener('click', () => {
-  if (state.locked || !state.ready || state.busy || !state.mine) return;
-  removeMine();
+  if (state.locked || !state.ready || state.busy) return;
+  openSheet(giftSheet);
+});
+const myGram = $('.gram', right);
+myGram.classList.add('tappable');
+myGram.addEventListener('click', () => {
+  if (state.locked || !state.ready) return;
+  openSheet(gramSheet);
 });
 $('#again').addEventListener('click', async () => {
   haptic('light');

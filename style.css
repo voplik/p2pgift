@@ -232,3 +232,56 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
 /* counterpart's button: fades between idle and active instead of blinking */
 .left .btn { transition: background .5s var(--ease-ios), opacity .45s var(--ease-ios), box-shadow .5s var(--ease-ios); }
 .left .btn.active, .left .btn.green { opacity: 1; }
+
+/* ---------- iOS sheets ---------- */
+.app { transform-origin: 50% 0; will-change: transform; }
+.backdrop { position: fixed; inset: 0; z-index: 40; background: rgba(0, 0, 0, .45); opacity: 0; pointer-events: none; }
+.backdrop.on { pointer-events: auto; }
+.sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; max-width: 520px; margin: 0 auto;
+  padding: 0 16px calc(env(safe-area-inset-bottom) + 16px); border-radius: 30px 30px 0 0;
+  background: rgba(36, 36, 42, .78); -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22), 0 -10px 40px rgba(0, 0, 0, .5);
+  transform: translateY(110%); visibility: hidden; touch-action: none; }
+.sheet.open { visibility: visible; }
+.grab-zone { padding: 6px 0 4px; cursor: grab; }
+.grabber { width: 36px; height: 5px; border-radius: 3px; background: rgba(255, 255, 255, .3); margin: 0 auto; }
+.sheet-head { display: flex; align-items: center; justify-content: center; position: relative; height: 40px; margin-bottom: 8px; }
+.sheet-title { font-size: 17px; font-weight: 600; letter-spacing: -.43px; }
+.sheet-close { position: absolute; right: 0; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center;
+  background: rgba(255, 255, 255, .12); color: var(--label-2); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .2); }
+.sheet-close .ic { width: 14px; height: 14px; stroke-width: 2.6; }
+.sheet .tray { margin-bottom: 10px; }
+.sheet .tray .gift { max-height: none; }
+.sheet-hint { margin: 0; text-align: center; font-size: 12px; color: var(--label-2); }
+
+/* GRAM picker */
+.gram-big { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 34px; font-weight: 700; letter-spacing: -.5px;
+  color: var(--gram); margin: 2px 0 12px; font-variant-numeric: tabular-nums; }
+.gram-big .ic.dia { width: 26px; height: 26px; margin: 0; stroke-width: 1.6; }
+.list { border-radius: 14px; overflow: hidden; background: rgba(255, 255, 255, .06); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .06); }
+.row { width: 100%; display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 14px; font-size: 15px; letter-spacing: -.23px;
+  text-align: left; position: relative; transition: background .2s; }
+.row + .row::before { content: ""; position: absolute; top: 0; left: 40px; right: 0; height: .5px; background: rgba(255, 255, 255, .12); }
+.row:active { background: rgba(255, 255, 255, .08); }
+.row .ic.dia { width: 16px; height: 16px; margin: 0; color: var(--gram); }
+.row .grow { flex: 1; }
+.row .tick { width: 18px; height: 18px; color: var(--blue); stroke-width: 2.6; opacity: 0; transform: scale(.4);
+  transition: opacity .2s, transform .45s var(--spring); }
+.row.on .tick { opacity: 1; transform: none; }
+.done-btn { margin-top: 14px; height: 50px; border-radius: 25px; font-size: 17px; letter-spacing: -.43px;
+  background: var(--blue); box-shadow: var(--glass-edge), 0 6px 20px rgba(10, 132, 255, .35); }
+
+/* your GRAM pill opens the picker */
+.right .gram.tappable { cursor: pointer; }
+.right .gram.tappable:not(.on) { color: var(--label-2); }
+.right .gram.tappable:active { transform: scale(.94); }
+.tray .gift.used { pointer-events: auto; cursor: pointer; }
+
+/* sheet header badges: gift count / GRAM balance */
+.sheet-badge { position: absolute; right: 0; height: 28px; padding: 0 10px; border-radius: 14px; display: inline-flex; align-items: center; gap: 5px;
+  font-size: 13px; font-weight: 600; letter-spacing: -.08px; font-variant-numeric: tabular-nums; color: var(--label);
+  background: rgba(255, 255, 255, .1); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .2); }
+.sheet-badge .ic { width: 15px; height: 15px; stroke-width: 2; color: var(--label-2); }
+.sheet-badge.bal { color: var(--gram); background: rgba(100, 210, 255, .14); }
+.sheet-badge.bal .ic.dia { width: 14px; height: 14px; margin: 0; color: var(--gram); }
+.row:disabled { opacity: .35; }

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>P2P Gift</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<link rel="stylesheet" href="style.css?v=8">
+<link rel="stylesheet" href="style.css?v=12">
 </head>
 <body>
 <div class="app">
@@ -43,13 +43,31 @@
     <button class="btn green again" id="again"><span class="label"><svg class="ic" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4.5h4.5"/></svg>Новый обмен</span></button>
   </section>
 
-  <section class="picker" id="picker">
-    <div class="row-title"><span>Ваши подарки</span><span class="badge" id="count"></span></div>
-    <div class="tray" id="tray"></div>
-    <div class="row-title"><span>Доплата GRAM</span></div>
-    <div class="seg" id="chips"><span class="seg-thumb" id="thumb"></span></div>
-  </section>
 </div>
-<script src="app.js?v=8"></script>
+<div class="backdrop" id="backdrop"></div>
+
+<!-- iOS-style sheets -->
+<section class="sheet" id="giftSheet" aria-hidden="true">
+  <div class="grab-zone"><div class="grabber"></div></div>
+  <div class="sheet-head">
+    <span class="sheet-title">Ваши подарки</span>
+    <span class="sheet-badge" title="Подарков"><svg class="ic" viewBox="0 0 24 24"><path d="M4 11h16v9H4zM3 7h18v4H3zM12 7v13M12 7c-1-3-5-4-5-1.5S10 7 12 7zm0 0c1-3 5-4 5-1.5S14 7 12 7z"/></svg><span id="giftCount">4</span></span>
+  </div>
+  <div class="tray" id="tray"></div>
+  <p class="sheet-hint">Перетащите подарок на стол или просто нажмите</p>
+</section>
+
+<section class="sheet" id="gramSheet" aria-hidden="true">
+  <div class="grab-zone"><div class="grabber"></div></div>
+  <div class="sheet-head">
+    <span class="sheet-title">Доплата GRAM</span>
+    <span class="sheet-badge bal" title="Баланс"><svg class="ic dia" viewBox="0 0 24 24"><path d="M6.5 4h11l4 5.2L12 20.5 2.5 9.2z"/><path d="M2.5 9.2h19M9 4l-1.5 5.2L12 20.5l4.5-11.3L15 4"/></svg><span id="balance">0</span></span>
+  </div>
+  <div class="gram-big"><svg class="ic dia" viewBox="0 0 24 24"><path d="M6.5 4h11l4 5.2L12 20.5 2.5 9.2z"/><path d="M2.5 9.2h19M9 4l-1.5 5.2L12 20.5l4.5-11.3L15 4"/></svg><span id="gramBig">0</span></div>
+  <div class="list" id="gramList"></div>
+  <button class="btn done-btn" data-close><span class="label">Готово</span></button>
+</section>
+
+<script src="app.js?v=12"></script>
 </body>
 </html>
