@@ -337,16 +337,13 @@ async function placeMine(id, fromEl) {
   anim(tile, [{ transform: 'scale(.9)' }, { transform: 'none' }], S.bouncy);
   haptic('light');
   $('.plus', mySlot).style.opacity = 0;
-  const clone = await fly(source, mySlot, g, { lift: fromEl ? 0 : 50, rotate: fromEl ? 10 : -10, s: S.soft });
+  const clone = await fly(source, mySlot, g, { lift: fromEl ? 0 : 40, s: S.soft });
   clone.remove();
   if (!alive(run)) return;
-  const el = putInSlot(right, g);
-  // lands tilted, then straightens itself; the slot gives a little under the weight
-  anim(el, [{ transform: 'rotate(8deg) scale(1.08)' }, { transform: 'rotate(-3deg) scale(.98)', offset: 0.45 }, { transform: 'none' }], S.wobbly);
-  anim(mySlot, [{ transform: 'scale(.92)' }, { transform: 'none' }], S.wobbly);
-  ripple(mySlot, { count: 1, scale: 1.45, color: 'rgba(255,255,255,.4)' });
-  // the counterpart's gift twitches as if it noticed
-  anim($('.slot .gift', left), [{ transform: 'none' }, { transform: 'rotate(-4deg) scale(1.03)', offset: 0.3 }, { transform: 'none' }], S.wobbly, { delay: 120 });
+  putInSlot(right, g);
+  // no shaking — the gift just settles in with a ripple and a little confetti
+  ripple(mySlot, { count: 2, scale: 1.6, color: 'rgba(255,255,255,.45)' });
+  confetti(mySlot, 22);
   haptic('medium');
   myBtn.disabled = false;
   state.busy = false;
