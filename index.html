@@ -5,58 +5,51 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>P2P Gift</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<link rel="stylesheet" href="style.css?v=3">
+<link rel="stylesheet" href="style.css?v=8">
 </head>
 <body>
 <div class="app">
-  <header class="top">
-    <div class="h-title">⇄ Обмен</div>
-    <div class="h-sub">с <b>ТИТАН</b> 🥷 · <span id="status">в сети</span></div>
-  </header>
-
-  <main class="stage">
-    <section class="trade" id="trade">
-      <div class="sides">
-        <div class="side left">
-          <div class="side-head"><span class="mini">🥷</span>ТИТАН <span class="sub"></span></div>
-          <div class="slot">+</div>
-          <div class="gname"></div><div class="gsub"></div>
-          <div class="gram">+ GRAM</div>
-          <button class="btn" disabled>Подтвердить</button>
-        </div>
-        <div class="lock">🔓</div>
-        <div class="side right">
-          <div class="side-head"><span class="mini">🟣</span>Вы</div>
-          <div class="slot mine">+</div>
-          <div class="gname"></div><div class="gsub"></div>
-          <div class="gram">+ GRAM</div>
-          <button class="btn" id="confirm" disabled>Подтвердить</button>
-        </div>
+  <section class="trade" id="trade">
+    <div class="trade-head" id="head"><svg class="ic swap" viewBox="0 0 24 24"><path d="M4 8h15m0 0-4-4m4 4-4 4M20 16H5m0 0 4-4m-4 4 4 4"/></svg><span id="phase">Обмен</span></div>
+    <div class="sides">
+      <div class="side left">
+        <div class="side-head"><span class="ava" style="--a:#ff9f0a;--b:#ff375f">Т</span><span class="who">ТИТАН</span> <span class="sub"></span></div>
+        <div class="slot"><svg class="ic plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div>
+        <div class="gname"></div><div class="gsub"></div>
+        <div class="gram"><svg class="ic dia" viewBox="0 0 24 24"><path d="M6.5 4h11l4 5.2L12 20.5 2.5 9.2z"/><path d="M2.5 9.2h19M9 4l-1.5 5.2L12 20.5l4.5-11.3L15 4"/></svg><span class="gv">GRAM</span></div>
+        <button class="btn" disabled><span class="fill"></span><span class="label">Подтвердить</span></button>
       </div>
-    </section>
-
-    <section class="trade done" id="result" hidden>
-      <div class="trade-head"><span class="ok">✓</span> Обмен завершён <span class="tm" id="time"></span></div>
-      <div class="result">
-        <div class="cell" id="sent"></div>
-        <div class="mid">⇄<div class="gram on" id="diff"></div></div>
-        <div class="cell" id="got"></div>
+      <div class="lock"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="3"/><path class="shackle" d="M8 11V8a4 4 0 0 1 8 0"/></svg></div>
+      <div class="side right">
+        <div class="side-head"><span class="ava" style="--a:#5e5ce6;--b:#bf5af2">В</span><span class="who">Вы</span></div>
+        <div class="slot mine"><svg class="ic plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div>
+        <div class="gname"></div><div class="gsub"></div>
+        <div class="gram"><svg class="ic dia" viewBox="0 0 24 24"><path d="M6.5 4h11l4 5.2L12 20.5 2.5 9.2z"/><path d="M2.5 9.2h19M9 4l-1.5 5.2L12 20.5l4.5-11.3L15 4"/></svg><span class="gv">GRAM</span></div>
+        <button class="btn" id="confirm" disabled><span class="fill"></span><span class="label">Подтвердить</span></button>
       </div>
-      <button class="btn green again" id="again">Новый обмен</button>
-    </section>
+    </div>
+  </section>
 
-    <p class="hint-line" id="hint">ТИТАН выбирает подарок…</p>
-  </main>
+  <section class="trade done" id="result" hidden>
+    <div class="trade-head">
+      <svg class="check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11"/><path d="M7 12.5l3.2 3.2L17 9"/></svg>
+      Обмен завершён <span class="tm" id="time"></span>
+    </div>
+    <div class="result">
+      <div class="cell" id="sent"></div>
+      <div class="mid"><span class="arrows"><svg class="ic swap" viewBox="0 0 24 24"><path d="M4 8h15m0 0-4-4m4 4-4 4M20 16H5m0 0 4-4m-4 4 4 4"/></svg></span><div class="gram on"><svg class="ic dia" viewBox="0 0 24 24"><path d="M6.5 4h11l4 5.2L12 20.5 2.5 9.2z"/><path d="M2.5 9.2h19M9 4l-1.5 5.2L12 20.5l4.5-11.3L15 4"/></svg><span class="gv" id="diff"></span></div></div>
+      <div class="cell" id="got"></div>
+    </div>
+    <button class="btn green again" id="again"><span class="label"><svg class="ic" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4.5h4.5"/></svg>Новый обмен</span></button>
+  </section>
 
-  <section class="sheet" id="sheet">
-    <div class="grab"></div>
-    <div class="sheet-title">Ваши подарки <span id="count"></span></div>
+  <section class="picker" id="picker">
+    <div class="row-title"><span>Ваши подарки</span><span class="badge" id="count"></span></div>
     <div class="tray" id="tray"></div>
-    <div class="sheet-title small">Ваша доплата</div>
-    <div class="chips" id="chips"></div>
-    <div class="hint">Перетащите подарок на стол — или просто нажмите</div>
+    <div class="row-title"><span>Доплата GRAM</span></div>
+    <div class="seg" id="chips"><span class="seg-thumb" id="thumb"></span></div>
   </section>
 </div>
-<script src="app.js?v=3"></script>
+<script src="app.js?v=8"></script>
 </body>
 </html>
