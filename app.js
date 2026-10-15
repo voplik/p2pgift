@@ -334,8 +334,8 @@ async function placeMine(id, fromEl) {
   updateCount();
   const tile = tray.querySelector(`[data-id="${id}"]`);
   const source = fromEl || tile;
-  // the tray tile becomes an empty placeholder
-  tile?.classList.add('used');
+  // the tray tile stays visible but greyed out and inactive
+  tile?.classList.add('placed');
   anim(tile, [{ transform: 'scale(.9)' }, { transform: 'none' }], S.bouncy);
   haptic('light');
   $('.plus', mySlot).style.opacity = 0;
@@ -362,14 +362,14 @@ async function removeMine(quiet) {
     giftInSlot.style.opacity = 0;
     const p = fly(giftInSlot, target, g, { lift: 30, s: S.snappy }).then((c) => {
       c.remove();
-      target.classList.remove('used');
+      target.classList.remove('placed');
       anim(target, [{ transform: 'scale(1.1)' }, { transform: 'none' }], S.wobbly);
     });
     emptySlot(right);
     if (!quiet) await p;
   } else {
     emptySlot(right);
-    target?.classList.remove('used');
+    target?.classList.remove('placed');
   }
 }
 
@@ -440,9 +440,12 @@ function openSheet(sh) {
   setBehind(true);
   haptic('light');
   if (sh === giftSheet) {
-    $$('.gift', tray).forEach((g, i) =>
+    $$('.gift', tray).forEach((g, i) => {
+      // the gift on the table is already greyed out and inactive: no entrance animation
+      if (g.classList.contains('placed')) return;
       anim(g, [{ opacity: 0, transform: 'translateY(24px) scale(.8)' }, { opacity: 1, transform: 'none' }], S.bouncy, { delay: 60 + i * 40 })
-        .then(() => clearAnims(g)));
+        .then(() => clearAnims(g));
+    });
   }
 }
 
@@ -807,11 +810,8 @@ function renderPicker() {
 function attachDrag(el, id) {
   el.addEventListener('pointerdown', (e) => {
     if (state.locked || !state.ready || state.busy) return;
-    if (el.classList.contains('used')) {
-      // tapping the empty tile of the gift on the table takes it back
-      if (state.mine?.id === id) removeMine();
-      return;
-    }
+    // the gift already on the table is shown but inactive
+    if (el.classList.contains('placed') || el.classList.contains('used')) return;
     e.preventDefault();
     el.classList.add('pressed');
     const sx = e.clientX;

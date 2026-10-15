@@ -356,3 +356,6 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
     color-mix(in srgb, color-mix(in srgb, var(--c1) 45%, var(--c2)) 88%, white);
   -webkit-backdrop-filter: none; backdrop-filter: none;
   box-shadow: inset 0 .5px 0 rgba(255, 255, 255, .45), 0 1px 3px rgba(0, 0, 0, .18); }
+
+/* the gift already on the table: still shown, but greyed out and inactive */
+.tray .gift.placed { opacity: .35; filter: grayscale(1); transform: scale(.94); cursor: default; }
