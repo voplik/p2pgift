@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>P2P Gift</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <button class="pill back" id="restart" aria-label="Заново"><span class="chev">‹</span><span class="badge">12</span></button>
+    <div class="pill title">
+      <div class="name">ТИТАН <span class="emoji">🧙</span></div>
+      <div class="status" id="status">в сети</div>
+    </div>
+    <div class="avatar">🥷</div>
+  </header>
+
+  <main class="chat" id="chat">
+    <div class="date">Сегодня</div>
+  </main>
+
+  <footer class="composer">
+    <button class="icon" aria-label="Вложение">📎</button>
+    <form class="field" id="form"><input id="input" placeholder="Сообщение" autocomplete="off"></form>
+    <button class="icon" aria-label="Голос">🎙</button>
+  </footer>
+
+  <section class="sheet" id="sheet">
+    <div class="grab"></div>
+    <div class="sheet-title">Ваши подарки <span id="count">4</span></div>
+    <div class="tray" id="tray"></div>
+    <div class="hint">Перетащите подарок на стол — или просто нажмите</div>
+  </section>
+</div>
+<script src="app.js"></script>
+</body>
+</html>
