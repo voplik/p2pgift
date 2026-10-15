@@ -133,7 +133,7 @@ const lock = $('.lock', trade);
 let state;
 const alive = (run) => run === state.run;
 
-function giftEl(g) {
+function giftEl(g, { play = true } = {}) {
   const el = document.createElement('div');
   el.className = 'gift';
   el.dataset.id = g.id;
@@ -154,9 +154,11 @@ function giftEl(g) {
   lottieText(g).then((txt) => {
     if (!window.lottie || !el.isConnected) return; // already gone (e.g. a short-lived flying copy)
     host._anim = window.lottie?.loadAnimation({
-      container: host, renderer: 'svg', loop: true, autoplay: true, animationData: JSON.parse(txt),
+      container: host, renderer: 'svg', loop: true, autoplay: play, animationData: JSON.parse(txt),
       rendererSettings: { preserveAspectRatio: 'xMidYMid meet', progressiveLoad: true },
     });
+    // gifts in the picker sheet stay still on their first frame
+    if (!play) host._anim?.addEventListener('DOMLoaded', () => host._anim?.goToAndStop(0, true));
   });
   return el;
 }
@@ -781,7 +783,7 @@ async function collapseToResult(run) {
 function renderPicker() {
   tray.textContent = '';
   MY_GIFTS.forEach((g) => {
-    const el = giftEl(g);
+    const el = giftEl(g, { play: false });
     tray.append(el);
     attachDrag(el, g.id);
   });
